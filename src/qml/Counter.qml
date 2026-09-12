@@ -7,8 +7,30 @@ Item {
 
     QtObject {
         id: d
-        readonly property var backend: typeof logos !== "undefined" && logos ? logos.module(mod) : null
+        property var backend: null
         readonly property string mod: "counter"
+        // THE BACKEND ARRIVES ON AN EDGE, not on first paint, and the early
+        // call is what starts the acquire. On the desktop this is merely
+        // correct; inside the Web container it is required — the replica there
+        // is DYNAMIC (a page cannot dlopen the generated factory plugin), so it
+        // has no metaobject until the source's has crossed the wire, and a
+        // dynamic replica handed to QML before that is cached with the generic
+        // one for the life of the page: every property reads `undefined` and
+        // every slot is "not a function". ADR 0004 records it at length.
+        //
+        // `viewModuleReadyChanged` is emitted under that name by BOTH bridges,
+        // which is what lets this document be the same file in both containers.
+        function take() {
+            d.backend = logos.module(d.mod)
+        }
+        Component.onCompleted: {
+            if (typeof logos === "undefined" || !logos)
+                return
+            logos.viewModuleReadyChanged.connect(function (name, ready) {
+                if (name === d.mod && ready) d.take()
+            })
+            d.take()
+        }
     }
 
     ColumnLayout {
