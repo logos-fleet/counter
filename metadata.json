@@ -9,6 +9,14 @@
   "category": "misc",
   "icon": "src/icons/counter.png",
 
+  "web": {
+    "view_backend": {
+      "class": "CounterBackend",
+      "header": "src/CounterBackend.h",
+      "sources": ["src/CounterBackend.cpp"]
+    }
+  },
+
   "nix": {
     "packages": {
       "build": [],
